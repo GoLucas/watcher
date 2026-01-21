@@ -1,0 +1,47 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  engineType = "library"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Watcher {
+  id          String   @id @default(uuid())
+  name        String
+  url         String
+  isActive    Boolean  @default(true)
+  lastRunAt   DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  offers      Offer[]
+}
+
+model Offer {
+  id          String   @id @default(uuid())
+  externalId  String   // ID from the source site to prevent duplicates
+  title       String
+  price       String?
+  currency    String?
+  url         String
+  imageUrl    String?
+  source      String   // OLX, OTODOM, OTOMOTO
+  location    String?
+  
+  isSeen      Boolean  @default(false)
+  isFavorite  Boolean  @default(false)
+  
+  createdAt   DateTime @default(now())
+  scrapedAt   DateTime @default(now())
+
+  watcherId   String
+  watcher     Watcher  @relation(fields: [watcherId], references: [id], onDelete: Cascade)
+
+  @@unique([externalId, source, watcherId]) // Allow same offer in different watchers
+}

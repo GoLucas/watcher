@@ -1,0 +1,36 @@
+services:
+  # Main UI application
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    volumes:
+      - watcher-data:/app/prisma
+    environment:
+      - DATABASE_URL=file:/app/prisma/dev.db
+      - NEXT_PUBLIC_WORKER_URL=http://worker:4000
+      - NEXT_PUBLIC_WORKER_SECRET=watcher-worker-secret
+    depends_on:
+      - worker
+    restart: unless-stopped
+
+  # Worker service (scraper)
+  worker:
+    build:
+      context: ./worker
+      dockerfile: Dockerfile
+    ports:
+      - "4000:4000"
+    volumes:
+      - watcher-data:/app/prisma
+    environment:
+      - DATABASE_URL=file:/app/prisma/dev.db
+      - WORKER_PORT=4000
+      - WORKER_SECRET=watcher-worker-secret
+      - SCRAPE_CRON=0 * * * *
+    restart: unless-stopped
+
+volumes:
+  watcher-data:
